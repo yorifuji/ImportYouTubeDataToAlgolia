@@ -116,13 +116,22 @@ def save_to_algolia(objects):
     # Add new objects to the index
     # https://www.algolia.com/doc/api-reference/api-methods/add-objects/
     # new_object = {'objectID': 1, 'description': 'Foo'}
-    res = index.save_objects(objects, {
-        'autoGenerateObjectIDIfNotExist': True
-    })
+    index.save_objects(objects, {
+        # 'autoGenerateObjectIDIfNotExist': True
+    }).wait()
 
-    # Wait for the indexing task to complete
-    # https://www.algolia.com/doc/api-reference/api-methods/wait-task/
-    res.wait()
+    # set searchable attributes
+    index.set_settings({
+        'searchableAttributes': [
+            'title',
+            'description'
+        ],
+        'indexLanguages': ['ja'],
+        'queryLanguages': ['ja'],
+    }).wait()
+
+    # objects = index.search('カレー',  {'hitsPerPage': 1})
+    # print(json.dumps(objects, sort_keys=True, indent=4, ensure_ascii=False))
 
 def main(channelId):
     uploads_playlist_id = get_uploads_playlist_id(channelId)
@@ -134,9 +143,9 @@ def main(channelId):
     # print(json.dumps(video_items_json, sort_keys=True, indent=4, ensure_ascii=False))
 
     objects = generateAlgoliaObjects(video_items_json)
-    print(json.dumps(objects, sort_keys=True, indent=4, ensure_ascii=False))
+    # print(json.dumps(objects, sort_keys=True, indent=4, ensure_ascii=False))
 
-    # save_to_algolia(objects)
+    save_to_algolia(objects)
 
 if __name__ == "__main__":
     youtube = get_authenticated_service()
