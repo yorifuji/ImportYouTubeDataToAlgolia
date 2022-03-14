@@ -14,6 +14,8 @@ load_dotenv(find_dotenv())
 api_service_name = "youtube"
 api_version = "v3"
 DEVELOPER_KEY = getenv('DEVELOPER_KEY')
+youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=DEVELOPER_KEY)
+
 
 ALGOLIA_APP_ID = getenv('ALGOLIA_APP_ID')
 ALGOLIA_API_KEY = getenv('ALGOLIA_API_KEY')
@@ -26,11 +28,6 @@ def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
-
-
-def get_authenticated_service():
-    return googleapiclient.discovery.build(
-        api_service_name, api_version, developerKey=DEVELOPER_KEY)
 
 
 def get_uploads_playlist_id(channelId):
@@ -117,22 +114,12 @@ def generateAlgoliaObjects(json_items):
 
 
 def save_to_algolia(objects):
-    # Start the API client
-    # https://www.algolia.com/doc/api-client/getting-started/instantiate-client-index/
     client = SearchClient.create(ALGOLIA_APP_ID, ALGOLIA_API_KEY)
-
-    # Create an index (or connect to it, if an index with the name `ALGOLIA_INDEX_NAME` already exists)
-    # https://www.algolia.com/doc/api-client/getting-started/instantiate-client-index/#initialize-an-index
     index = client.init_index(ALGOLIA_INDEX_NAME)
 
-    # Add new objects to the index
-    # https://www.algolia.com/doc/api-reference/api-methods/add-objects/
-    # new_object = {'objectID': 1, 'description': 'Foo'}
-    index.save_objects(objects, {
-        # 'autoGenerateObjectIDIfNotExist': True
-    }).wait()
+    index.save_objects(objects)
 
-    # set searchable attributes
+    # set searchable attributes and languages.
     index.set_settings({
         'searchableAttributes': [
             'title',
@@ -153,18 +140,17 @@ def print_json(jsonObject):
 def main(channelId):
     uploads_playlist_id = get_uploads_playlist_id(channelId)
     video_id_list = get_video_id_in_playlist(uploads_playlist_id)
-    video_items = get_video_items(video_id_list)
-    # print(len(video_items))
+    video_item_list = get_video_items(video_id_list)
+    # print_json(video_item_list)
 
-    video_items_json = convertToJSON(video_items)
-    # print_json(video_items_json)
+    video_item_json = convertToJSON(video_item_list)
+    # print_json(video_item_json)
 
-    objects = generateAlgoliaObjects(video_items_json)
+    objects = generateAlgoliaObjects(video_item_json)
     # print_json(objects)
 
     save_to_algolia(objects)
 
 
 if __name__ == "__main__":
-    youtube = get_authenticated_service()
     main(sys.argv[1])
