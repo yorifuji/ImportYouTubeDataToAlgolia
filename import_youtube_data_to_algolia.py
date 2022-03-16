@@ -84,7 +84,7 @@ def get_best_image_url(item):
     return ''
 
 
-def make_publishiedAt_unixtime(item):
+def make_publishied_timestamp(item):
     return int(datetime.datetime.fromisoformat(item["snippet"]["publishedAt"].replace('Z', '+00:00')).timestamp())
 
 
@@ -97,8 +97,8 @@ def convertToJSON(video_items):
         'id': item["id"],
         'title': item["snippet"]["title"],
         'description': item["snippet"]["description"],
-        'publishedAt': item["snippet"]["publishedAt"],
-        'publishedAtUnixTime': make_publishiedAt_unixtime(item),
+        'published': item["snippet"]["publishedAt"],
+        'published_timestamp': make_publishied_timestamp(item),
         'views': int(item["statistics"]["viewCount"]) if 'viewCount' in item["statistics"].keys() else 0,
         'likes': int(item["statistics"]["likeCount"]) if 'likeCount' in item["statistics"].keys() else 0,
         'image': get_best_image_url(item),
@@ -117,7 +117,7 @@ def save_to_algolia(objects):
     client = SearchClient.create(ALGOLIA_APP_ID, ALGOLIA_API_KEY)
     index = client.init_index(ALGOLIA_INDEX_NAME)
 
-    index.save_objects(objects).wait()
+    index.save_objects(objects)
 
     # set searchable attributes and languages.
     index.set_settings({
@@ -127,7 +127,28 @@ def save_to_algolia(objects):
         ],
         'indexLanguages': ['ja'],
         'queryLanguages': ['ja'],
-    }).wait()
+    })
+
+    # create replica and configure.
+    attributes = ["published_timestamp", "views", "likes"]
+    index.set_settings({
+        'replicas': [f'{ALGOLIA_INDEX_NAME}_{attribute}_desc' for attribute in attributes]
+    })
+    for attribute in attributes:
+        replica_index = client.init_index(f'{ALGOLIA_INDEX_NAME}_{attribute}_desc')
+        replica_index.set_settings({
+            'ranking': [
+                f'desc({attribute})',   # sort by attribute.
+                'typo',
+                'geo',
+                'words',
+                'filters',
+                'proximity',
+                'attribute',
+                'exact',
+                'custom'
+            ]
+        })
 
     # objects = index.search('カレー',  {'hitsPerPage': 1})
     # print_json(objects, sort_keys=False)
@@ -141,6 +162,7 @@ def main(channelId):
     uploads_playlist_id = get_uploads_playlist_id(channelId)
     video_id_list = get_video_id_in_playlist(uploads_playlist_id)
     video_item_list = get_video_items(video_id_list)
+    print(f'Found {len(video_item_list)} videos.')
     # print_json(video_item_list)
 
     video_item_json = convertToJSON(video_item_list)
