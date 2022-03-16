@@ -20,7 +20,7 @@ Importing uploaded video data from YouTube channels into Algolia.
 
 local
 
-> pip install -r requirements.txt && python import_youtube_data_to_algolia.py <channel_id>
+> pip install -r requirements.txt && python app.py <channel_id>
 
 Docker
 
