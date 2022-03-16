@@ -130,11 +130,11 @@ def save_to_algolia(objects):
     }).wait()
 
     # objects = index.search('カレー',  {'hitsPerPage': 1})
-    # print_json(objects)
+    # print_json(objects, sort_keys=False)
 
 
-def print_json(jsonObject):
-    print(json.dumps(jsonObject, sort_keys=True, indent=2, ensure_ascii=False))
+def print_json(jsonObject, sort_keys=True):
+    print(json.dumps(jsonObject, sort_keys=sort_keys, indent=2, ensure_ascii=False))
 
 
 def main(channelId):
@@ -144,7 +144,7 @@ def main(channelId):
     # print_json(video_item_list)
 
     video_item_json = convertToJSON(video_item_list)
-    # print_json(video_item_json)
+    # print_json(video_item_json, sort_keys=False)
 
     objects = generateAlgoliaObjects(video_item_json)
     # print_json(objects)
