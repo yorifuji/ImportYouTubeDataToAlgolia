@@ -1,6 +1,6 @@
 # Import YouTube Data to Algolia
 
-Importing uploaded video data from YouTube channels into Algolia.
+Importing uploaded video data from YouTube channel into Algolia.
 
 # Requirement
 
